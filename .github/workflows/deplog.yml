@@ -41,7 +41,7 @@ jobs:
                   "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 
                   
                   atlas migrate apply \
-                  --dir "file://${GITHUB_WORKSPACE}/ent/migration" \
+                  --dir "file://${GITHUB_WORKSPACE}/ent/migrate/migrations" \
                   --url "${{ secrets.DATABASE_URL }}"
 
             - name: restart services
