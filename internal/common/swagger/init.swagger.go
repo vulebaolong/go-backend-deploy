@@ -72,7 +72,7 @@ func Start(ginEngine *gin.Engine, env *env.Env) {
 		reflector.Spec = &openapi3.Spec{Openapi: "3.0.3"}
 
 		reflector.Spec.Info.
-			WithTitle("Golang Backend").
+			WithTitle("Golang Backend Anh Long").
 			WithVersion("1.0.0").
 			WithDescription("Description")
 

@@ -18,6 +18,14 @@ jobs:
               with:
                   ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+            - name: Build Docker image
+              run: |
+                  docker build -t img-go-backend:latest .
+
+            - name: Transfer Docker image to server
+              run: |
+                  docker save img-go-backend:latest | gzip | ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "gunzip | sudo docker load"
+
             - name: Trust deploy host
               run: |
                   mkdir -p ~/.ssh
@@ -35,14 +43,6 @@ jobs:
                   atlas migrate apply \
                   --dir "file://${GITHUB_WORKSPACE}/ent/migrate/migrations" \
                   --url "${{ secrets.DATABASE_URL }}"
-
-            - name: Build Docker image
-              run: |
-                  docker build -t img-go-backend:latest .
-
-            - name: Transfer Docker image to server
-              run: |
-                  docker save img-go-backend:latest | gzip | ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "gunzip | sudo docker load"
 
             - name: restart services
               run: |
