@@ -35,10 +35,10 @@ jobs:
         run: |
           ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" << 'EOF'
             set -e
-            
+
             cd /home/ubuntu/go-backend
 
-            sudo docker-compose up -d
+            sudo docker compose up -d
 
             sudo docker image prune -f || true
             sudo docker builder prune -f || true
