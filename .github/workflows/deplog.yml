@@ -36,11 +36,11 @@ jobs:
 
             - name: Run migration 
               run: | 
-                  ssh -fN \ 
-                  -L 15432:127.0.0.1:5434 \ 
+                  ssh -fN \
+                  -L 15432:127.0.0.1:5434 \
                   "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 
                   
-                  atlas migrate apply \ 
+                  atlas migrate apply \
                   --dir "file://ent/migration" \
                   --url "${{ secrets.DATABASE_URL }}"
 
