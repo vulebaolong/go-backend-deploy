@@ -1,45 +1,59 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    deploy:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout source
+              uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: |
-          docker build -t img-go-backend:latest .
+            - name: Build Docker image
+              run: |
+                  docker build -t img-go-backend:latest .
 
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+            - name: Setup SSH agent
+              uses: webfactory/ssh-agent@v0.9.0
+              with:
+                  ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Trust deploy host
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+            - name: Trust deploy host
+              run: |
+                  mkdir -p ~/.ssh
+                  ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Transfer Docker image to server
-        run: |
-          docker save img-go-backend:latest | gzip | ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "gunzip | sudo docker load"
+            - name: Transfer Docker image to server
+              run: |
+                  docker save img-go-backend:latest | gzip | ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "gunzip | sudo docker load"
 
-      - name: Run migrations and restart services
-        run: |
-          ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" << 'EOF'
-            set -e
+            - name: Install Atlas
+              run: |
+                  curl -sSf https://atlasgo.sh | sudo sh atlas version
 
-            cd /home/ubuntu/go-backend
+            - name: Run migration 
+              run: | 
+                  ssh -fN \ 
+                  -L 15432:127.0.0.1:5434 \ 
+                  "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 
+                  
+                  atlas migrate apply \ 
+                  --dir "file://ent/migration" \
+                  --url "${{ secrets.DATABASE_URL }}"
 
-            sudo docker compose up -d
+            - name: restart services
+              run: |
+                  ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" << 'EOF'
+                    set -e
 
-            sudo docker image prune -f || true
-            sudo docker builder prune -f || true
-          EOF
+                    cd /home/ubuntu/go-backend
+
+                    sudo docker compose --env-file .env.production up -d
+
+                    sudo docker image prune -f || true
+                    sudo docker builder prune -f || true
+                  EOF
