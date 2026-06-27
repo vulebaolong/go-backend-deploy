@@ -17,6 +17,11 @@ jobs:
               uses: webfactory/ssh-agent@v0.9.0
               with:
                   ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+            
+            - name: Trust deploy host
+              run: |
+                  mkdir -p ~/.ssh
+                  ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
 
             - name: Build Docker image
               run: |
@@ -25,11 +30,6 @@ jobs:
             - name: Transfer Docker image to server
               run: |
                   docker save img-go-backend:latest | gzip | ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "gunzip | sudo docker load"
-
-            - name: Trust deploy host
-              run: |
-                  mkdir -p ~/.ssh
-                  ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
 
             - name: Install Atlas
               uses: ariga/setup-atlas@v0
